@@ -26,13 +26,13 @@
     <form action="calculation" method="post" onsubmit="return validate2()">
         <table>
             <tr>
-                <td>Enter Your calculation</td>
+                <td>Enter Your calculation </td>
                 <td><input id="expression" name="express"></td>
                 <td><input type="submit" value="Calculate"></td>
-            </tr>
-        </table>
-    </form>
-</div>
+             </tr>
+         </table>
+     </form>
+ </div>
 
-</body>
-</html>
+ </body>
+ </html>
