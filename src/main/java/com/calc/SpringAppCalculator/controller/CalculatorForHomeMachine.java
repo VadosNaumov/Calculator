@@ -3,9 +3,10 @@ package com.calc.SpringAppCalculator.controller;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Scanner;
 import java.util.Stack;
 
-public class Calculator {
+public class CalculatorForHomeMachine {
 
     public static final String STRING = "\"-\" means substract;\n" +
             "\"+\" means addition;";
@@ -105,21 +106,20 @@ public class Calculator {
         StringBuilder sb = new StringBuilder();
         s.chars().filter(x -> !Character.isWhitespace(x))
                 .forEach(sb::appendCodePoint);
-        for (int i = 1; i < sb.length(); i++) {
-            if (sb.charAt(i) == '+' && sb.charAt(i) == sb.charAt(i - 1)) {
-                sb.deleteCharAt(i - 1);
+        for (int i = 1; i < sb.length();i++) {
+            if (sb.charAt(i)=='+' && sb.charAt(i)==sb.charAt(i - 1)) {
+                sb.deleteCharAt(i-1);
                 i--;
-            } else if (sb.charAt(i) == '-' && sb.charAt(i) == sb.charAt(i - 1)) {
+            } else if (sb.charAt(i)=='-' && sb.charAt(i)==sb.charAt(i - 1)) {
                 int count = 2;
                 int j = i + 1;
                 for (; j < sb.length(); j++) {
-                    if (sb.charAt(j) == '-') count++;
-                    else break;
+                    if (sb.charAt(j) == '-') count++; else break;
                 }
                 for (int k = i - 1; k < j - 1; k++) {
                     sb.deleteCharAt(k);
                 }
-                sb.setCharAt(i - 1, count % 2 == 0 ? '+' : '-');
+                sb.setCharAt(i - 1,count % 2 == 0 ? '+' : '-' );
                 sb.trimToSize();
                 i = j - 1;
             }
@@ -128,68 +128,76 @@ public class Calculator {
     }
 
 
-    public static String calculate(String temp) {
-        String[] s;
-
-        if (temp.contains("=")) { // реализация создания переменных
-            String buf = checkAssignment(temp); //проверяем правильность присваивания
-            if (!buf.equals("good")) {
-                return buf;
-            }
-        } else {
-            if (temp.startsWith("/")) {//проверяем комманду
-                String check = checkCommand(temp);
-                return check;
-            }
-            String newTemp = delWhiteSpaces(temp); //избавляемся от пробелов
-            String buf = checkExpression(newTemp); //проверяем правильность выражения
-            if (!buf.equals("good")) {
-                return buf;
-            }
-            s = newTemp.split(pattern);
-            if (s.length >= 2) {
-                ArrayList<String> list = convertInfixToPostfix(newTemp);//конвертируем в постфикскную нотацию
-                Stack<String> secondStack = new Stack<>();
-                isShown = false;
-                BigInteger count;
-                if (newTemp.startsWith("-")) secondStack.add(String.valueOf(0));
-                for (String l : list) {
-                    try {
-                        if (l.matches("\\d+")) {
-                            secondStack.add(l);
-                        } else if (l.matches("\\w+")) {
-                            if (map.containsKey(l)) {
-                                secondStack.add(map.get(l));
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);//не верный ответ
+        System.out.println("\nPlease start...");
+        outer:
+        while (true) {
+            String temp = scanner.nextLine();
+            String[] s;
+            if (temp.contains("=")) { // реализация создания переменных
+                String buf = checkAssignment(temp); //проверяем правильность присваивания
+                if (!buf.equals("good")) {
+                    System.out.println(buf);
+                }
+            } else {
+                if (temp.startsWith("/")) {//проверяем комманду
+                    String check = checkCommand(temp);
+                    System.out.println(check);
+                    if (check.equals("Bye!")) break;
+                    continue;
+                }
+                String newTemp = delWhiteSpaces(temp); //избавляемся от пробелов
+                String buf = checkExpression(newTemp); //проверяем правильность выражения
+                if (!buf.equals("good")) {
+                    System.out.println(buf);
+                    continue;
+                }
+                s = newTemp.split(pattern);
+                if (s.length >= 2) {
+                    ArrayList<String> list = convertInfixToPostfix(newTemp);//конвертируем в постфикскную нотацию
+                    Stack<String> secondStack = new Stack<>();
+                    isShown = false;
+                    BigInteger count;
+                    if (newTemp.startsWith("-")) secondStack.add(String.valueOf(0));
+                    for (String l : list) {
+                        try {
+                            if (l.matches("\\d+")) {
+                                secondStack.add(l);
+                            } else if (l.matches("\\w+")) {
+                                if (map.containsKey(l)) {
+                                    secondStack.add(map.get(l));
+                                } else {
+                                    System.out.println("Unknown variable");
+                                    continue outer;
+                                }
                             } else {
-                                return "Unknown variable";
+                                BigInteger y = new BigInteger(secondStack.pop());
+                                BigInteger x = new BigInteger(secondStack.pop());
+                                count = process(x, l, y);
+                                secondStack.add(String.valueOf(count));
                             }
-                        } else {
-                            BigInteger y = new BigInteger(secondStack.pop());
-                            BigInteger x = new BigInteger(secondStack.pop());
-                            count = process(x, l, y);
-                            secondStack.add(String.valueOf(count));
+                        } catch (Throwable t) {
+                            isShown = true;
+                            System.out.println("Invalid expression");
+                            break;
                         }
+                    }
+                    if (!isShown) {
+                        System.out.println(secondStack.pop());
+                    }
+                } else if (!s[0].isEmpty())
+                    try {
+                        if (s[0].matches("[a-zA-Z]+")) {
+                            System.out.println(map.getOrDefault(s[0], "Unknown variable"));
+                            continue;
+                        }
+                        System.out.println(BigInteger.valueOf(Long.valueOf(s[0])));
                     } catch (Throwable t) {
                         isShown = true;
-                        return "Invalid expression";
+                        System.out.println("Invalid expression");
                     }
-                }
-                if (!isShown) {
-                    return "Your result = " + secondStack.pop();
-                }
-            } else if (!s[0].isEmpty()) {
-                try {
-                    if (s[0].matches("[a-zA-Z]+")) {
-                        return "Your result = " + map.getOrDefault(s[0], "Unknown variable");
-                    }
-                    return "Your result = " + BigInteger.valueOf(Long.valueOf(s[0])).toString();
-                } catch (Throwable t) {
-                    isShown = true;
-                    return "Invalid expression";
-                }
             }
         }
-        return "Invalid expression";
     }
 }
-
